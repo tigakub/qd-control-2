@@ -6,11 +6,12 @@
 //
 
 import SwiftUI
+import simd
 
 struct ContentView: View {
     @State var feedback = QDFeedback()
     
-    @Bindable var qdControl: QDControl2
+    @Bindable var qdControl: QDControl3
     @Bindable var qdRobot: QDRobot
     @Bindable var qdClient: QDClient
     
@@ -118,9 +119,15 @@ extension ContentView : Touchable {
 			var point: CGPoint = .zero
 			point = (newLeftTouchPoint + newRightTouchPoint) * 0.5
 			centroidLocation = point - centroidOffset
-			if (centroidLocation - origin).magnitude > maxRadius {
-				centroidLocation = origin + (centroidLocation - origin).normalized * maxRadius
+			var vector = centroidLocation - origin
+			if vector.magnitude > maxRadius {
+				vector = vector.normalized * maxRadius
+				centroidLocation = origin + vector
 			}
+			
+			let direction = vector / maxRadius
+			qdControl.translation = simd_float4(x: Float(direction.x), y: 0.0, z: -Float(direction.y), w: 0.0)
+			qdControl.rotation = Float32(rotation)
 		}
 	}
 	
@@ -133,28 +140,18 @@ extension ContentView : Touchable {
 				rightTouch = nil
 			}
 		}
-		if leftTouch == nil || rightTouch == nil {
-			pressed = false
-		}
 		withAnimation {
 			rotation = .zero
 		}
 		withAnimation {
 			centroidLocation = origin
 		}
+		qdControl.translation = .zero
+		qdControl.rotation = 0.0
+		qdControl.bodySway = 0.0
 	}
 	
 	func touchesCancelled(_ touches: Set<UITouch>, _ event: UIEvent) {
-		for touch in touches {
-			if touch == leftTouch {
-				leftTouch = nil
-			}
-			if touch == rightTouch {
-				rightTouch = nil
-			}
-		}
-		if leftTouch == nil || rightTouch == nil {
-			pressed = false
-		}
+		touchesEnded(touches, event)
 	}
 }

@@ -29,6 +29,9 @@
 		C267B3202B45D94C0037CD17 /* UIColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = C267B31F2B45D94C0037CD17 /* UIColors.swift */; };
 		C267B3222B45E33E0037CD17 /* CGPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = C267B3212B45E33E0037CD17 /* CGPoint.swift */; };
 		C267B3242B4619520037CD17 /* Shape.swift in Sources */ = {isa = PBXBuildFile; fileRef = C267B3232B4619520037CD17 /* Shape.swift */; };
+		C267B3262B4866250037CD17 /* Stance.swift in Sources */ = {isa = PBXBuildFile; fileRef = C267B3252B4866250037CD17 /* Stance.swift */; };
+		C267B3282B4866990037CD17 /* QDControl3.swift in Sources */ = {isa = PBXBuildFile; fileRef = C267B3272B4866990037CD17 /* QDControl3.swift */; };
+		C267B32A2B48DB660037CD17 /* WifiInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = C267B3292B48DB660037CD17 /* WifiInfo.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -75,6 +78,9 @@
 		C267B31F2B45D94C0037CD17 /* UIColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIColors.swift; sourceTree = "<group>"; };
 		C267B3212B45E33E0037CD17 /* CGPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGPoint.swift; sourceTree = "<group>"; };
 		C267B3232B4619520037CD17 /* Shape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shape.swift; sourceTree = "<group>"; };
+		C267B3252B4866250037CD17 /* Stance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stance.swift; sourceTree = "<group>"; };
+		C267B3272B4866990037CD17 /* QDControl3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QDControl3.swift; sourceTree = "<group>"; };
+		C267B3292B48DB660037CD17 /* WifiInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WifiInfo.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -137,9 +143,12 @@
 				C267B30B2B45D4E50037CD17 /* BSpline.swift */,
 				C267B30A2B45D4E50037CD17 /* Exception.swift */,
 				C267B3092B45D4E50037CD17 /* Math.swift */,
+				C267B3292B48DB660037CD17 /* WifiInfo.swift */,
 				C267B3082B45D4E50037CD17 /* QDClient.swift */,
+				C267B3252B4866250037CD17 /* Stance.swift */,
 				C267B30C2B45D4E50037CD17 /* QDControl.swift */,
 				C267B3172B45D55C0037CD17 /* QDControl2.swift */,
+				C267B3272B4866990037CD17 /* QDControl3.swift */,
 				C267B30E2B45D4E50037CD17 /* QDMessage.swift */,
 				C267B3072B45D4E50037CD17 /* QDRobot.swift */,
 				C267B2E02B45D49B0037CD17 /* Assets.xcassets */,
@@ -304,9 +313,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C267B32A2B48DB660037CD17 /* WifiInfo.swift in Sources */,
 				C267B31E2B45D7FA0037CD17 /* FingerControl.swift in Sources */,
 				C267B3142B45D4E50037CD17 /* QDControl.swift in Sources */,
 				C267B3152B45D4E50037CD17 /* BinaryCodable.swift in Sources */,
+				C267B3262B4866250037CD17 /* Stance.swift in Sources */,
+				C267B3282B4866990037CD17 /* QDControl3.swift in Sources */,
 				C267B3242B4619520037CD17 /* Shape.swift in Sources */,
 				C267B3132B45D4E50037CD17 /* BSpline.swift in Sources */,
 				C267B30F2B45D4E50037CD17 /* QDRobot.swift in Sources */,
@@ -491,6 +503,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "UDP Messaging";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Allow access to WIFI information always";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "Allow access to WIFI information always";
+				INFOPLIST_KEY_NSLocationUsageDescription = "Allow access to location information";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Allow access to WIFI information when app is active";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -522,6 +539,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "UDP Messaging";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Allow access to WIFI information always";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "Allow access to WIFI information always";
+				INFOPLIST_KEY_NSLocationUsageDescription = "Allow access to location information";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Allow access to WIFI information when app is active";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

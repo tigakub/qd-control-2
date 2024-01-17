@@ -9,99 +9,148 @@ import Foundation
 import simd
 
 @Observable class QDControl2 {
-	struct Stance: CustomStringConvertible {
-		var targets: [simd_float4]
-		var centroid: simd_float4
-		var tangent: simd_float4
-		var orthogonal: simd_float4
-		var progress: Float
-		var stepSize: Float
-		
-		init(_ targets: [simd_float4] = [.zero, .zero, .zero, .zero], centroid: simd_float4 = .zero, tangent: simd_float4 = .zero, orthogonal: simd_float4 = .zero, progress: Float = 0.0, stepSize: Float = 0.0) {
-			self.targets = targets
-			self.centroid = centroid
-			self.tangent = tangent
-			self.orthogonal = orthogonal
-			self.progress = progress
-			self.stepSize = stepSize
-		}
-		
-		init(_ other: Stance) {
-			self.targets = other.targets
-			self.centroid = other.centroid
-			self.tangent = other.tangent
-			self.orthogonal = other.orthogonal
-			self.progress = other.progress
-			self.stepSize = other.stepSize
-		}
-		
-		var description: String {
-			get {
-				return "{ \(targets[0]), \(targets[1]), \(targets[2]), \(targets[3]), centroid: \(centroid), tangent: \(tangent), progress: \(progress), step size: \(stepSize) }"
-			}
-		}
-
-		func tricentroid(_ limb: QDRobot.Limb.Configuration)->simd_float4 {
-			var p0: simd_float4 = .zero
-			var p1: simd_float4 = .zero
-			var p2: simd_float4 = .zero
-			
-			switch limb {
-				case .frontRight:
-					p0 = targets[1]
-					p1 = targets[2]
-					p2 = targets[3]
-				case .frontLeft:
-					p0 = targets[0]
-					p1 = targets[2]
-					p2 = targets[3]
-				case .backRight:
-					p0 = targets[0]
-					p1 = targets[1]
-					p2 = targets[3]
-				case .backLeft:
-					p0 = targets[0]
-					p1 = targets[1]
-					p2 = targets[2]
-			}
-			
-			let m0 = (p0 + p1) * 0.5
-			let m1 = (p1 + p2) * 0.5
-			
-			let x1 = m0.x
-			let z1 = m0.z
-			let x2 = p2.x
-			let z2 = p2.z
-			
-			let x3 = m1.x
-			let z3 = m1.z
-			let x4 = p0.x
-			let z4 = p0.z
-			
-			let d = (x1 - x2) * (z3 - z4) - (z1 - z2) * (x3 - x4)
-			
-			let x = ((x1 * z2 - z1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * z4 - z3 * x4)) / d
-			let z = ((x1 * z2 - z1 * x2) * (z3 - z4) - (z1 - z2) * (x3 * z4 - z3 * x4)) / d
-			
-			return simd_float4(x, 0.0, z, 0.0)
-		}
-		
-		func localizedTargets(position: simd_float4, rotation: Float)->[simd_float4] {
-			let matrix = simd_float4x4(rotationAxis: .j, angle: rotation)
-			let p0 = matrix * (targets[0] - position)
-			let p1 = matrix * (targets[1] - position)
-			let p2 = matrix * (targets[2] - position)
-			let p3 = matrix * (targets[3] - position)
-			// print("r(\(-rotation)) p0(\(p0.x), \(p0.y)) p1(\(p1.x), \(p1.y)) p2(\(p2.x), \(p2.y)) p3(\(p3.x), \(p3.y))")
-			return [p0, p1, p2, p3]
-		}
+	
+	enum Mode {
+		case idle
+		case starting
+		case walking
+		case stopping1
+		case stopping2
 	}
 	
 	var qdRobot: QDRobot
 	var qdClient: QDClient
+	
+	var mode: Mode = .idle
+	let idleStance: Stance
+	var currentStance: Stance
+	var currentSide: Stance.Side
+	var lastTime: DispatchTime
+	var translation: simd_float4 = .zero
+	var rotation: Float = 0.0
+	var stepDuration: Float = 2.0
+	var stepCount: UInt32 = 0
 
 	init(robot: QDRobot, client: QDClient) {
 		qdRobot = robot
 		qdClient = client
+		
+		idleStance = Stance([], centroid: simd_float4(x: 0.0, y: 0.0, z: 0.0, w: 1.0), tangent: .k, orthogonal: .i, progress: 0.0, stepSize: 0.0)
+		currentStance = Stance(idleStance)
+		currentSide = .frbl
+		
+		lastTime = .now()
+	}
+	
+	func start() {
+		switch mode {
+			case .idle:
+				stepCount = 0
+				mode = .starting
+				lastTime = .now()
+				tick()
+			default:
+				break
+		}
+	}
+	
+	func tick() {
+		switch mode {
+			case .starting:
+				currentSide = .frbl
+				if translation.x < 0.0 {
+					currentSide = .flbr
+				}
+				mode = .walking
+			case .walking:
+				if currentSide == .frbl {
+					currentSide = .flbr
+				} else {
+					currentSide = .frbl
+				}
+				let currentTime: DispatchTime = .now()
+				DispatchQueue.main.asyncAfter(deadline: currentTime.advanced(by: .milliseconds(Int(stepDuration * 1000.0)))) {
+					[unowned self] in
+					tick()
+				}
+			default:
+				return
+		}
+		
+		var nextStance = currentStance.newStance(side: currentSide, translation: translation, rotation: rotation)
+		let encoder = QDEncoder(capacity: 36)
+		switch currentSide {
+			case .frbl:
+				let newPose = QDPose2(side: QDMsgType.pose2RL.rawValue, id: stepCount, front: nextStance.targets[0], back: nextStance.targets[3], stepHeight: 50.0, bodySway: 0.0, duration: 2000)
+				encoder.encode(newPose)
+			case .flbr:
+				let newPose = QDPose2(side: QDMsgType.pose2LR.rawValue, id: stepCount, front: nextStance.targets[1], back: nextStance.targets[2], stepHeight: 50.0, bodySway: 0.0, duration: 2000)
+				encoder.encode(newPose)
+		}
+		qdClient.send(message: encoder.data)
+		stepCount += 1
+		currentStance = nextStance
+	}
+	
+	func stop() {
+		mode = .stopping1
+		stop1()
+	}
+	
+	func stop1() {
+		if currentSide == .frbl {
+			currentSide = .flbr
+		} else {
+			currentSide = .frbl
+		}
+		let encoder = QDEncoder()
+		switch currentSide {
+			case .frbl:
+				currentStance.targets[0] = idleStance.targets[0]
+				currentStance.targets[3] = idleStance.targets[3]
+				let newPose = QDPose2(side: QDMsgType.pose2RL.rawValue, id: stepCount, front: currentStance.targets[0], back: currentStance.targets[3], stepHeight: 50.0, bodySway: 0.0, duration: 2000)
+				encoder.encode(newPose)
+			case .flbr:
+				currentStance.targets[1] = idleStance.targets[1]
+				currentStance.targets[2] = idleStance.targets[2]
+				let newPose = QDPose2(side: QDMsgType.pose2LR.rawValue, id: stepCount, front: currentStance.targets[1], back: currentStance.targets[2], stepHeight: 50.0, bodySway: 0.0, duration: 2000)
+				encoder.encode(newPose)
+		}
+		qdClient.send(message: encoder.data)
+		stepCount += 1
+		if mode == .stopping1 {
+			mode = .stopping2
+			let currentTime: DispatchTime = .now()
+			DispatchQueue.main.asyncAfter(deadline: currentTime.advanced(by: .milliseconds(Int(stepDuration * 1000.0)))) {
+				[unowned self] in
+				stop2()
+			}
+		}
+	}
+	
+	func stop2() {
+		if currentSide == .frbl {
+			currentSide = .flbr
+		} else {
+			currentSide = .frbl
+		}
+		let encoder = QDEncoder()
+		switch currentSide {
+			case .frbl:
+				currentStance.targets[0] = idleStance.targets[0]
+				currentStance.targets[3] = idleStance.targets[3]
+				let newPose = QDPose2(side: QDMsgType.pose2RL.rawValue, id: stepCount, front: currentStance.targets[0], back: currentStance.targets[3], stepHeight: 50.0, bodySway: 0.0, duration: 2000)
+				encoder.encode(newPose)
+			case .flbr:
+				currentStance.targets[1] = idleStance.targets[1]
+				currentStance.targets[2] = idleStance.targets[2]
+				let newPose = QDPose2(side: QDMsgType.pose2LR.rawValue, id: stepCount, front: currentStance.targets[1], back: currentStance.targets[2], stepHeight: 50.0, bodySway: 0.0, duration: 2000)
+				encoder.encode(newPose)
+		}
+		qdClient.send(message: encoder.data)
+		stepCount += 1
+		if mode == .stopping2 {
+			mode = .idle
+		}
 	}
 }

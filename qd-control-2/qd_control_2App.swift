@@ -8,11 +8,19 @@
 import SwiftUI
 import simd
 import Network
+import SystemConfiguration.CaptiveNetwork
+import CoreLocation
 
 // Circuit Launch
-let remoteHost = "192.168.4.1"
+// let remoteHost = "192.168.4.1"
+
 // Home
-// let remoteHost = "192.168.7.220"
+// let remoteHost = "192.168.7.246"
+
+// Peets
+let remoteHost = "192.168.7.246"
+
+let wifiInfo = WifiInfo()
 
 let remoteIP = IPv4Address(remoteHost)!
 let remotePort = UInt16(3567)
@@ -33,15 +41,54 @@ let qdRobot = QDRobot(
 	backRight   : simd_float4(x:  71.0, y: -bodyHeight, z: -75.0, w: 0.0),
 	backLeft    : simd_float4(x: -71.0, y: -bodyHeight, z: -75.0, w: 0.0))
 
-let qdControl = QDControl2(robot: qdRobot, client: qdClient)
+let qdControl = QDControl3(robot: qdRobot, client: qdClient)
 
-let qdClient = QDClient(localPort: 3567, remoteEndpoint: NWEndpoint.hostPort(host: .ipv4(remoteIP), port: NWEndpoint.Port(integerLiteral: remotePort)))
+let qdClient = QDClient(localPort: 3567)
 
 @main
 struct qd_control_2App: App {
     var body: some Scene {
         WindowGroup {
             ContentView(qdControl: qdControl, qdRobot: qdRobot, qdClient: qdClient)
+				.onAppear() {
+					/*
+					wifiInfo.authorizeWifiInfo {
+						info in
+						if let ssid = info.ssid {
+							print(ssid)
+							
+						}
+					}
+					*/
+					qdClient.connect(remoteEndpoint: NWEndpoint.hostPort(host: .ipv4(remoteIP), port: NWEndpoint.Port(integerLiteral: remotePort))) {
+						newState in
+						switch newState {
+							case .cancelled:
+								print("Cancelled")
+							case .ready:
+								print("Ready")
+								qdControl.start()
+							case .preparing:
+								print("Preparing")
+							case .setup:
+								print("Setting up")
+							default:
+								print("Connection failed")
+						}
+					}
+					qdClient.start {
+						cnx in
+						cnx.receiveMessage {
+							data, contentContext, isComplete, error in
+							/*
+							if let data = data {
+								let decoder = QDDecoder(source: data)
+								feedback = decoder.decode(QDFeedback.self)
+							}
+							*/
+						}
+					}
+				}
         }
     }
 }

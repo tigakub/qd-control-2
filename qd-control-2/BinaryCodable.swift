@@ -46,7 +46,7 @@ class QDEncoder: BinaryEncoder {
     var capacity: Int
     var data: Data
     
-    init(capacity: Int = 68) {
+    init(capacity: Int = 150) {
         self.capacity = capacity
         data = Data(capacity: capacity)
     }
